@@ -52,3 +52,15 @@ async def test_invalid_county_without_state(census_client):
         ValueError, match="County filter requires state to be specified"
     ):
         await census_client.get_population_data(county="001")
+
+
+@pytest.mark.asyncio
+async def test_get_counties(census_client):
+    """Test fetching county codes for California"""
+    counties = await census_client.get_counties("06")
+
+    # Basic validation
+    assert len(counties) > 0
+    assert "001" in counties  # Alameda County
+    assert all(len(county) == 3 for county in counties)  # County codes are 3 digits
+    assert all(county.isdigit() for county in counties)  # All digits

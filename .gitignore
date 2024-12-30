@@ -173,3 +173,4 @@ cython_debug/
 .vscode
 .python-version
 .DS_STORE
+data
