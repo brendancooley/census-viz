@@ -1,5 +1,5 @@
 import pytest
-from census_viz.client import CensusClient
+from census_viz.client.census import CensusClient
 from census_viz.config import settings
 import os
 
@@ -64,3 +64,23 @@ async def test_get_counties(census_client):
     assert "001" in counties  # Alameda County
     assert all(len(county) == 3 for county in counties)  # County codes are 3 digits
     assert all(county.isdigit() for county in counties)  # All digits
+
+
+@pytest.mark.asyncio
+async def test_get_states(census_client):
+    """Test fetching state FIPS codes"""
+    states = await census_client.get_states()
+
+    # Basic validation
+    assert len(states) > 0
+    assert "Maryland" in states
+    assert states["Maryland"] == "24"  # Maryland's FIPS code
+    assert "California" in states
+    assert states["California"] == "06"  # California's FIPS code
+
+    # Check format
+    for state, code in states.items():
+        assert isinstance(state, str)
+        assert isinstance(code, str)
+        assert len(code) == 2  # State FIPS codes are always 2 digits
+        assert code.isdigit()

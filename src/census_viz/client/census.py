@@ -195,6 +195,43 @@ class CensusClient:
                 raise CensusAPIError("Invalid API key") from e
             raise
 
+    async def get_states(self) -> dict[str, str]:
+        """
+        Get all state FIPS codes and names
+
+        Returns:
+            Dictionary mapping state names to FIPS codes
+
+        Example:
+            >>> await client.get_states()
+            {"Alabama": "01", "Alaska": "02", ...}
+        """
+        url = f"{self.base_url}/2020/dec/pl"
+        params = {"get": "NAME", "for": "state:*", "key": self.api_key}
+
+        try:
+            response = await self._client.get(url, params=params)
+            response.raise_for_status()
+
+            if response.status_code == 204:
+                raise CensusAPIError("No state data found")
+
+            data = response.json()
+            if not data or len(data) < 2:
+                raise CensusAPIError("Census API returned empty or invalid data")
+
+            # Response format is [["NAME", "state"], ["Alabama", "01"], ...]
+            return {row[0]: row[1] for row in data[1:]}
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise CensusAPIError("Census API endpoint not found") from e
+            elif e.response.status_code == 400:
+                raise CensusAPIError("Invalid request") from e
+            elif e.response.status_code == 403:
+                raise CensusAPIError("Invalid API key") from e
+            raise
+
     async def close(self):
         """Close the HTTP client"""
         await self._client.aclose()
