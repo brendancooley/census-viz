@@ -27,25 +27,23 @@ class CensusClient:
         county: Optional[str] = None,
     ) -> List[CensusResponse]:
         """
-        Fetch population data from the American Community Survey (ACS) 5-year estimates.
+        Fetch population and income data from the ACS 5-year estimates.
 
-        This method fetches:
-        - Total population
-        - Age breakdowns
-        - Geographic identifiers
-
-        The GEOID format for block groups is:
-        STATE(2) + COUNTY(3) + TRACT(6) + BLOCK GROUP(1)
-        Example: 060014001001 = California(06) + Alameda(001) + Tract(400100) + BG(1)
+        Variables:
+        - B01001: Sex by Age
+        - B19013: Median Household Income
         """
         variables = [
             "B01001_001E",  # Total population
-            "B01001_003E",  # Male: Under 5 years
-            "B01001_004E",  # Male: 5 to 9 years
-            "B01001_005E",  # Male: 10 to 14 years
-            "B01001_027E",  # Female: Under 5 years
-            "B01001_028E",  # Female: 5 to 9 years
-            "B01001_029E",  # Female: 10 to 14 years
+            "B01001_003E",
+            "B01001_027E",  # Under 5 (M/F)
+            "B01001_004E",
+            "B01001_028E",  # 5-9 years (M/F)
+            "B01001_005E",
+            "B01001_029E",  # 10-14 years (M/F)
+            "B01001_006E",
+            "B01001_030E",  # 15-17 years (M/F)
+            "B19013_001E",  # Median household income
         ]
 
         if county and not state:
@@ -119,22 +117,16 @@ class CensusClient:
             try:
                 pop_data = PopulationData(
                     total_population=int(row_dict["B01001_001E"]),
-                    under_18=sum(
-                        int(row_dict[v])
-                        for v in [
-                            "B01001_003E",
-                            "B01001_004E",
-                            "B01001_005E",  # Male under 15
-                            "B01001_027E",
-                            "B01001_028E",
-                            "B01001_029E",  # Female under 15
-                        ]
-                    ),
                     under_5=int(row_dict["B01001_003E"]) + int(row_dict["B01001_027E"]),
                     age_5_to_9=int(row_dict["B01001_004E"])
                     + int(row_dict["B01001_028E"]),
                     age_10_to_14=int(row_dict["B01001_005E"])
                     + int(row_dict["B01001_029E"]),
+                    age_15_to_17=int(row_dict["B01001_006E"])
+                    + int(row_dict["B01001_030E"]),
+                    median_income=int(row_dict["B19013_001E"])
+                    if row_dict["B19013_001E"] not in ["", "None"]
+                    else None,
                 )
             except (KeyError, ValueError) as e:
                 raise CensusAPIError(
