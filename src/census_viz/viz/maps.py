@@ -56,13 +56,8 @@ class CensusMapper:
         # Create base map
         m = folium.Map(location=center, zoom_start=zoom_start, tiles="cartodbpositron")
 
-        if filters:
-            df = self.df.filter(*filters)
-        else:
-            df = self.df
-
         # Create color scale
-        values = df.get_column(value_column)
+        values = self.df.get_column(value_column)
         colormap = cm.LinearColormap(
             colors=[
                 "#f7fcfd",
@@ -77,6 +72,11 @@ class CensusMapper:
             vmin=values.min(),
             vmax=values.max(),
         )
+
+        if filters:
+            df = self.df.filter(*filters)
+        else:
+            df = self.df
 
         # Add GeoJSON layer
         folium.GeoJson(
